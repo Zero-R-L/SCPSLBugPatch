@@ -15,3 +15,4 @@
 - 防止服务器为防止意外而断开服务器主机连接并Log
 - 回合重启时自动展示本回合坏包信息
 - 本插件的Log将保存至 `%Roming%\SCP Secret Laboratory\SCPSLBugPatch.log`
+### 感谢超然物外服务器提供测试环境
