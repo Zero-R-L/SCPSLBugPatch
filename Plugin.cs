@@ -8,22 +8,21 @@ using System.IO;
 
 namespace SCPSLBugPatch
 {
-    internal class MainClass
+    internal class Plugin
     {
         private const string PluginName = "SCPSLBugPatch";
-        private static string LogFilePath;
-        private static Harmony harmony;
+        private static string LogFilePath { get; set; }
+        private static Harmony Harmony { get; } = new Harmony($"{PluginName}");
         [PluginEntryPoint(PluginName, "1.0.0", PluginName, "ZeroRL")]
         private void LoadPlugin()
         {
-            string folder = FileManager.GetAppFolder(true, false, "");
+            string folder = FileManager.GetAppFolder();
             if (Directory.Exists(folder))
             {
                 LogFilePath = Path.Combine(folder, $"{PluginName}.log");
             }
             OnMessageReceivedPatch.Initialize();
-            harmony = new Harmony($"{PluginName}-{DateTime.Now.Ticks}");
-            harmony.PatchAll();
+            Harmony.PatchAll();
             EventManager.RegisterAllEvents(this);
             PluginHandler handler = PluginHandler.Get(this);
             Log.Info($"{handler.PluginName} v{handler.PluginVersion} by {handler.PluginAuthor} has been enabled!");
@@ -39,8 +38,8 @@ namespace SCPSLBugPatch
         [PluginEvent]
         private void OnRoundRestart(RoundRestartEvent _)
         {
-            OnMessageReceivedPatch.Initialize();
             OnMessageReceivedPatch.LogBadDataInfo();
+            OnMessageReceivedPatch.Initialize();
         }
     }
 }

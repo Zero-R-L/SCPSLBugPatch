@@ -8,22 +8,22 @@ namespace SCPSLBugPatch.Patches
     {
         private static bool Prefix()
         {
-            if (NetworkClient.connectState == ConnectState.Connecting || NetworkClient.connectState == ConnectState.Connected)
-            {
-                NetworkClient.connectState = ConnectState.Disconnecting;
-                NetworkClient.ready = false;
-            }
             if (NetworkClient.connection is null)
             {
                 return false;
             }
-            if (NetworkClient.connection.connectionId is 0)
+            if (!Shutdown._quitting)
             {
-                if (ServerShutdown.ShutdownState != ServerShutdown.ServerShutdownState.BroadcastingShutdown)
+                if (NetworkClient.connection.connectionId is 0)
                 {
-                    MainClass.AddLog("NetworkClient.Disconnect: NetworkClient.connection.connectionId is 0");
+                    Plugin.AddLog($"NetworkClient.Disconnect: NetworkClient.connection.connectionId is 0");
+                    return false;
                 }
-                return false;
+            }
+            if (NetworkClient.connectState == ConnectState.Connecting || NetworkClient.connectState == ConnectState.Connected)
+            {
+                NetworkClient.connectState = ConnectState.Disconnecting;
+                NetworkClient.ready = false;
             }
             NetworkClient.connection.Disconnect();
             return false;

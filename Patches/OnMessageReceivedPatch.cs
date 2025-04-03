@@ -58,7 +58,14 @@ Total Remote Addresses Count (May Not the DDoS Source Address) =>> {2}↓
         }
         internal static void LogBadDataInfo()
         {
-            MainClass.AddLog(GetBadDataInfo());
+            if (Info.RemoteAddresses.Count != 0)
+            {
+                Plugin.AddLog(GetBadDataInfo());
+            }
+            else
+            {
+                Plugin.AddLog("No Bad Packet");
+            }
         }
         private static bool Prefix(NetPacket packet, IPEndPoint remoteEndPoint, NetManager __instance)
         {
