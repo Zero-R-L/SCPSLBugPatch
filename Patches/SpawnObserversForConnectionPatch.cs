@@ -10,95 +10,70 @@ namespace SCPSLBugPatch.Patches
         {
             Plugin.AddLog("NetworkServer.SpawnObserversForConnection: " + content);
         }
-
         private static bool Prefix(NetworkConnectionToClient conn)
         {
-            int a = 0;
-            try
+            if (conn == null)
             {
-                a++;
-                if (conn is null)
+                AddLog("NetworkConnectionToClient is null");
+                return false;
+            }
+            if (!NetworkServer.initialized)
+            {
+                AddLog("NetworkServer is not initialized");
+                return false;
+            }
+            if (!conn.isReady)
+            {
+                return false;
+            }
+            conn.Send(default(ObjectSpawnStartedMessage));
+            if (NetworkServer.spawned == null)
+            {
+                AddLog("NetworkServer.spawned is null");
+                return false;
+            }
+            foreach (NetworkIdentity value in NetworkServer.spawned.Values)
+            {
+                if (value == null)
                 {
-                    AddLog("NetworkConnectionToClient is null");
-                    return false;
+                    AddLog("value is null in NetworkServer.spawned.Values");
+                    continue;
                 }
-
-                a++;
-                if (!NetworkServer.initialized)
+                if (value.gameObject == null)
                 {
-                    AddLog("NetworkServer is not initialized");
-                    return false;
+                    AddLog("value.gameObject is null in NetworkServer.spawned.Values");
+                    continue;
                 }
-
-                a++;
-                if (!conn.isReady)
+                if (!value.gameObject.activeSelf)
                 {
-                    return false;
+                    continue;
                 }
-
-                conn.Send(default(ObjectSpawnStartedMessage));
-
-                a++;
-                if (NetworkServer.spawned is null)
+                if (value.visible == Visibility.ForceShown)
                 {
-                    AddLog("NetworkServer.spawned is null");
-                    return false;
+                    value.AddObserver(conn);
                 }
-
-                a++;
-                foreach (NetworkIdentity value in NetworkServer.spawned.Values)
+                else
                 {
-                    if (value is null)
-                    {
-                        AddLog("value is null in NetworkServer.spawned.Values");
-                        return false;
-                    }
-
-                    if (value.gameObject is null)
-                    {
-                        AddLog("value.gameObject is null in NetworkServer.spawned.Values");
-                        return false;
-                    }
-
-                    if (!value.gameObject.activeSelf)
+                    if (value.visible == Visibility.ForceHidden || value.visible != 0)
                     {
                         continue;
                     }
 
-                    if (value.visible == Visibility.ForceShown)
+                    if (NetworkServer.aoi != null)
                     {
-                        value.AddObserver(conn);
-                    }
-                    else
-                    {
-                        if (value.visible == Visibility.ForceHidden || value.visible != 0)
-                        {
-                            continue;
-                        }
-
-                        if (NetworkServer.aoi != null)
-                        {
-                            if (NetworkServer.aoi.OnCheckObserver(value, conn))
-                            {
-                                value.AddObserver(conn);
-                            }
-                        }
-                        else
+                        if (NetworkServer.aoi.OnCheckObserver(value, conn))
                         {
                             value.AddObserver(conn);
                         }
                     }
+                    else
+                    {
+                        value.AddObserver(conn);
+                    }
                 }
-
-                conn.Send(default(ObjectSpawnFinishedMessage));
-
-                return false;
             }
-            catch (System.Exception e)
-            {
-                AddLog($"[{a}] " + e.ToString());
-                return false;
-            }
+            conn.Send(default(ObjectSpawnFinishedMessage));
+            return false;
         }
     }
 }

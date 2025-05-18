@@ -1,6 +1,7 @@
 ﻿using HarmonyLib;
 using LiteNetLib;
 using LiteNetLib.Utils;
+using PluginAPI.Core;
 using Steam;
 using System;
 using System.Collections.Generic;
@@ -64,7 +65,7 @@ Total Remote Addresses Count (May Not the DDoS Source Address) =>> {2}↓
             }
             else
             {
-                Plugin.AddLog("No Bad Packet");
+                Log.Info("No Bad Packet");
             }
         }
         private static bool Prefix(NetPacket packet, IPEndPoint remoteEndPoint, NetManager __instance)

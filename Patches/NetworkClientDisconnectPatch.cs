@@ -8,13 +8,13 @@ namespace SCPSLBugPatch.Patches
     {
         private static bool Prefix()
         {
-            if (NetworkClient.connection is null)
+            if (NetworkClient.connection == null)
             {
                 return false;
             }
             if (!Shutdown._quitting)
             {
-                if (NetworkClient.connection.connectionId is 0)
+                if (NetworkClient.connection.connectionId == 0)
                 {
                     Plugin.AddLog($"NetworkClient.Disconnect: NetworkClient.connection.connectionId is 0");
                     return false;
