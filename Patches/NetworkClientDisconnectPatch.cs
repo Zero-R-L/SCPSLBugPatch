@@ -16,7 +16,7 @@ namespace SCPSLBugPatch.Patches
             {
                 if (NetworkClient.connection.connectionId == 0)
                 {
-                    Plugin.AddLog($"NetworkClient.Disconnect: NetworkClient.connection.connectionId is 0");
+                    MainClass.AddLog($"NetworkClient.Disconnect: NetworkClient.connection.connectionId is 0");
                     return false;
                 }
             }

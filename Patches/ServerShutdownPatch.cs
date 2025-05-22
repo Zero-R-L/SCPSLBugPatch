@@ -1,5 +1,4 @@
-﻿using CommandSystem.Commands.Shared;
-using HarmonyLib;
+﻿using HarmonyLib;
 
 namespace SCPSLBugPatch.Patches
 {

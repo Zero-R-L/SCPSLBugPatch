@@ -12,7 +12,7 @@ namespace SCPSLBugPatch.Patches
         {
             if (st == IntPtr.Zero)
             {
-                Plugin.AddLog("OpusWrapper.Decode: OpusDecoder is already disposed!");
+                MainClass.AddLog("OpusWrapper.Decode: OpusDecoder is already disposed!");
                 __result = 0;
                 return false;
             }
@@ -28,7 +28,7 @@ namespace SCPSLBugPatch.Patches
 
             if (num < 0)
             {
-                Plugin.AddLog($"OpusWrapper.Decode: OpusStatusCode is {(OpusStatusCode)num} instead of OK");
+                MainClass.AddLog($"OpusWrapper.Decode: OpusStatusCode is {(OpusStatusCode)num} instead of OK");
                 __result = 0;
                 return false;
             }

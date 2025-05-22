@@ -8,7 +8,7 @@ namespace SCPSLBugPatch.Patches
     {
         private static void AddLog(string content)
         {
-            Plugin.AddLog("NetworkServer.SpawnObserversForConnection: " + content);
+            MainClass.AddLog("NetworkServer.SpawnObserversForConnection: " + content);
         }
         private static bool Prefix(NetworkConnectionToClient conn)
         {
