@@ -1,47 +1,39 @@
-﻿using HarmonyLib;
-using LabApi.Events.Arguments.Scp914Events;
-using LabApi.Events.CustomHandlers;
-using LabApi.Events.Handlers;
-using LabApi.Features.Console;
-using LabApi.Loader.Features.Plugins;
-using Scp914;
+﻿using Exiled.API.Features;
+using HarmonyLib;
 using SCPSLBugPatch.Patches;
 using System;
 using System.IO;
 
 namespace SCPSLBugPatch
 {
-    internal class MainClass : Plugin
+    internal class MainClass : Plugin<Config>
     {
         private const string PluginName = "SCPSLBugPatch";
         private static string LogFilePath { get; set; }
         private static Harmony Harmony { get; } = new Harmony(PluginName);
         public override string Name => PluginName;
-        public override string Description => null;
         public override string Author => "ZeroRL";
-        public override Version Version => new Version(1, 1, 0, 0);
-        public override Version RequiredApiVersion => LabApi.Features.LabApiProperties.CurrentVersion;
         internal static void AddLog(string content)
         {
-            Logger.Info(content);
+            Log.Info(content);
             File.AppendAllText(LogFilePath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] [{ServerStatic.ServerPort}] {content}\r\n");
         }
-        private void OnRoundRestart()
-        {
-            OnMessageReceivedPatch.LogBadDataInfo();
-            OnMessageReceivedPatch.Initialize();
-        }
-        public override void Enable()
+        public override void OnEnabled()
         {
             string folder = FileManager.GetAppFolder();
             LogFilePath = Path.Combine(folder, $"{PluginName}.log");
             OnMessageReceivedPatch.Initialize();
             Harmony.PatchAll();
-            ServerEvents.RoundRestarted += OnRoundRestart;
+            Exiled.Events.Handlers.Server.RestartingRound += OnRestartingRound;
         }
-        public override void Disable()
+        public override void OnDisabled()
         {
             Harmony.UnpatchAll();
+        }
+        private void OnRestartingRound()
+        {
+            OnMessageReceivedPatch.LogBadDataInfo();
+            OnMessageReceivedPatch.Initialize();
         }
     }
 }

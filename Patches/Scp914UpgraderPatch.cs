@@ -15,6 +15,7 @@ using NorthwoodLib.Pools;
 using LabApi.Features.Console;
 using UnityEngine;
 using Logger = LabApi.Features.Console.Logger;
+using Exiled.API.Features;
 
 namespace SCPSLBugPatch.Patches
 {
@@ -38,6 +39,16 @@ namespace SCPSLBugPatch.Patches
                 }
                 setting = scp914ProcessingPlayerEventArgs.KnobSetting;
                 vector = scp914ProcessingPlayerEventArgs.NewPosition;
+                var upgradingPlayerEventArgs = new Exiled.Events.EventArgs.Scp914.UpgradingPlayerEventArgs(Player.Get(ply), upgradeInventory, heldOnly, setting, vector);
+                Exiled.Events.Handlers.Scp914.OnUpgradingPlayer(upgradingPlayerEventArgs);
+                if (!upgradingPlayerEventArgs.IsAllowed)
+                {
+                    return false;
+                }
+                upgradeInventory = upgradingPlayerEventArgs.UpgradeItems;
+                heldOnly = upgradingPlayerEventArgs.HeldOnly;
+                setting = upgradingPlayerEventArgs.KnobSetting;
+                vector = upgradingPlayerEventArgs.OutputPosition;
                 ply.TryOverridePosition(vector);
                 if (!upgradeInventory)
                 {
@@ -53,26 +64,29 @@ namespace SCPSLBugPatch.Patches
                 }
                 foreach (ushort key in hashSet)
                 {
-                    ItemBase itemBase;
-                    Scp914ItemProcessor scp914ItemProcessor;
-                    if (ply.inventory.UserInventory.Items.TryGetValue(key, out itemBase) && Scp914Upgrader.TryGetProcessor(itemBase.ItemTypeId, out scp914ItemProcessor))
+                    if (ply.inventory.UserInventory.Items.TryGetValue(key, out ItemBase itemBase) && Scp914Upgrader.TryGetProcessor(itemBase.ItemTypeId, out Scp914ItemProcessor scp914ItemProcessor))
                     {
                         ItemType itemTypeId = itemBase.ItemTypeId;
                         Scp914ProcessingInventoryItemEventArgs scp914ProcessingInventoryItemEventArgs = new Scp914ProcessingInventoryItemEventArgs(itemBase, setting, ply);
                         Scp914Events.OnProcessingInventoryItem(scp914ProcessingInventoryItemEventArgs);
                         if (scp914ProcessingInventoryItemEventArgs.IsAllowed)
                         {
-                            setting = scp914ProcessingInventoryItemEventArgs.KnobSetting;
-                            Scp914Upgrader.OnInventoryItemUpgraded?.Invoke(itemBase, setting);
-                            Scp914Result scp914Result = scp914ItemProcessor.UpgradeInventoryItem(setting, itemBase);
-                            ((Action<Scp914Result, Scp914KnobSetting>)typeof(Scp914Upgrader).Field(nameof(Scp914Upgrader.OnUpgraded)).GetValue(null))?.Invoke(scp914Result, setting);
-                            if (scp914Result.ResultingItems == null || !scp914Result.ResultingItems.TryGet(0, out ItemBase itemBase2))
-                            {
-                                itemBase2 = null;
-                            }
-                            if (itemBase2 != null)
-                            {
-                                Scp914Events.OnProcessedInventoryItem(new Scp914ProcessedInventoryItemEventArgs(itemTypeId, itemBase2, setting, ply));
+                            var upgradingInventoryItemEventArgs = new Exiled.Events.EventArgs.Scp914.UpgradingInventoryItemEventArgs(Player.Get(ply), itemBase, setting, true);
+                            Exiled.Events.Handlers.Scp914.OnUpgradingInventoryItem(upgradingInventoryItemEventArgs);
+                            if (upgradingInventoryItemEventArgs.IsAllowed)
+                            {                                
+                                setting = scp914ProcessingInventoryItemEventArgs.KnobSetting;
+                                Scp914Upgrader.OnInventoryItemUpgraded?.Invoke(itemBase, setting);
+                                Scp914Result scp914Result = scp914ItemProcessor.UpgradeInventoryItem(setting, itemBase);
+                                ((Action<Scp914Result, Scp914KnobSetting>)typeof(Scp914Upgrader).Field(nameof(Scp914Upgrader.OnUpgraded)).GetValue(null))?.Invoke(scp914Result, setting);
+                                if (scp914Result.ResultingItems == null || !scp914Result.ResultingItems.TryGet(0, out ItemBase itemBase2))
+                                {
+                                    itemBase2 = null;
+                                }
+                                if (itemBase2 != null)
+                                {
+                                    Scp914Events.OnProcessedInventoryItem(new Scp914ProcessedInventoryItemEventArgs(itemTypeId, itemBase2, setting, ply));
+                                }
                             }
                         }
                     }
