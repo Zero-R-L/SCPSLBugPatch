@@ -100,7 +100,7 @@
     <Compile Include="Patches\OnMessageReceivedPatch.cs" />
     <Compile Include="Patches\OpusWrapperDecodePatch.cs" />
     <Compile Include="Patches\SpawnObserversForConnectionPatch.cs" />
-    <Compile Include="Patches\NetworkClientDisconnectPatch.cs" />
+    <Compile Include="Patches\LocalConnectionToServerDisconnenctPatch.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
