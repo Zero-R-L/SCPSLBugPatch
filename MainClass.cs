@@ -25,10 +25,12 @@ namespace SCPSLBugPatch
             OnMessageReceivedPatch.Initialize();
             Harmony.PatchAll();
             Exiled.Events.Handlers.Server.RestartingRound += OnRestartingRound;
+            base.OnEnabled();
         }
         public override void OnDisabled()
         {
             Harmony.UnpatchAll();
+            base.OnDisabled();
         }
         private void OnRestartingRound()
         {

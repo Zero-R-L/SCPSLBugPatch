@@ -94,6 +94,7 @@
     <Compile Include="Config.cs" />
     <Compile Include="MainClass.cs" />
     <Compile Include="Patches\BroadcastToConnectionPatch.cs" />
+    <Compile Include="Patches\PopulateDummyActionsPatch.cs" />
     <Compile Include="Patches\Scp914UpgraderPatch.cs" />
     <Compile Include="Patches\ServerShutdownPatch.cs" />
     <Compile Include="Patches\OnMessageReceivedPatch.cs" />
