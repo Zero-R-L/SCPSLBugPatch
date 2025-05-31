@@ -12,9 +12,10 @@ namespace SCPSLBugPatch.Patches
     {
         public static bool Prefix(LocalConnectionToServer __instance)
         {
-            if (__instance.identity.isServer)
+            if (__instance.identity.isServer && !Shutdown._quitting)
             {
-                MainClass.AddLog("[LocalConnectionToServer-DISCONNECT] Avoid a crash");
+                MainClass.AddLog($"[LocalConnectionToServer-DISCONNECT] Avoid a crash {ServerShutdown.ShutdownState}");
+                Shutdown.Quit();
                 return false;
             }
             return true;
