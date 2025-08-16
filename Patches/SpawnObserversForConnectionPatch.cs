@@ -1,5 +1,6 @@
 ﻿using HarmonyLib;
 using Mirror;
+using System.Linq;
 
 namespace SCPSLBugPatch.Patches
 {
@@ -12,63 +13,44 @@ namespace SCPSLBugPatch.Patches
         }
         private static bool Prefix(NetworkConnectionToClient conn)
         {
-            if (conn == null)
-            {
-                AddLog("NetworkConnectionToClient is null");
-                return false;
-            }
-            if (!NetworkServer.initialized)
-            {
-                AddLog("NetworkServer is not initialized");
-                return false;
-            }
             if (!conn.isReady)
             {
                 return false;
             }
             conn.Send(default(ObjectSpawnStartedMessage));
-            if (NetworkServer.spawned == null)
+            foreach (var keyValuePair in NetworkServer.spawned.ToList())
             {
-                AddLog("NetworkServer.spawned is null");
-                return false;
-            }
-            foreach (NetworkIdentity value in NetworkServer.spawned.Values)
-            {
-                if (value == null)
+                if (keyValuePair.Value == null)
                 {
-                    AddLog("value is null in NetworkServer.spawned.Values");
+                    AddLog("value is null in NetworkServer.spawned.Values, REMOVING");
+                    NetworkServer.spawned.Remove(keyValuePair.Key);
                     continue;
                 }
-                if (value.gameObject == null)
-                {
-                    AddLog("value.gameObject is null in NetworkServer.spawned.Values");
-                    continue;
-                }
-                if (!value.gameObject.activeSelf)
+                if (!keyValuePair.Value.gameObject.activeSelf)
                 {
                     continue;
                 }
-                if (value.visible == Visibility.ForceShown)
+                if (keyValuePair.Value.visible == Visibility.ForceShown)
                 {
-                    value.AddObserver(conn);
+                    keyValuePair.Value.AddObserver(conn);
                 }
                 else
                 {
-                    if (value.visible == Visibility.ForceHidden || value.visible != 0)
+                    if (keyValuePair.Value.visible == Visibility.ForceHidden || keyValuePair.Value.visible != 0)
                     {
                         continue;
                     }
 
                     if (NetworkServer.aoi != null)
                     {
-                        if (NetworkServer.aoi.OnCheckObserver(value, conn))
+                        if (NetworkServer.aoi.OnCheckObserver(keyValuePair.Value, conn))
                         {
-                            value.AddObserver(conn);
+                            keyValuePair.Value.AddObserver(conn);
                         }
                     }
                     else
                     {
-                        value.AddObserver(conn);
+                        keyValuePair.Value.AddObserver(conn);
                     }
                 }
             }
