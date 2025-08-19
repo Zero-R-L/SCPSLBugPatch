@@ -12,3 +12,4 @@
 - 本插件的所有Log将保存至 `\SCP Secret Laboratory\SCPSLBugPatch.log`
 ## 插件功能部分展示
 ![104da998-697f-43ae-85a0-e517eab097f0](https://github.com/user-attachments/assets/cc7970a2-8900-4d2e-99d7-4ed709980a40)
+## 如需修复更多SCPSL的BUG，请提交Issues
