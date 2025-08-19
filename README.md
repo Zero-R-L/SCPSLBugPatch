@@ -4,7 +4,8 @@
 - 在`LocalAdminLogs`中出现`Disconnecting connId=0 to prevent exploits`意味着服务器已经断开了本地主机连接，通常将导致所有玩家出现时间停止并且无法加入服务器同时服务器控制台`Delayed connection incoming from endpoint`刷屏
 - 在`LocalAdminLogs`中出现`[NM] DataReceived: bad!`刷屏意味着服务器频繁接受到异常的数据包，可能正在遭受DDoS攻击，可查询攻击包数、总攻击数据大小、攻击源IP
 ## 插件依赖
-0Harmony
+- LabAPI
+- 0Harmony
 ## 插件功能
 - 服务器后台可使用指令 `sbdi` 来查询坏包（可能为DDoS数据包）信息
 - 防止服务器断开本地主机连接
