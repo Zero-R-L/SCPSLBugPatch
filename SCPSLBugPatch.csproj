@@ -79,6 +79,7 @@
     <Compile Include="Patches\DummyActionsErrorPatch.cs" />
     <Compile Include="Patches\BadDataLogSpamPatch.cs" />
     <Compile Include="Patches\DisconnectHostPatch.cs" />
+    <Compile Include="Patches\LogSpamPatch.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
