@@ -5,8 +5,10 @@ using LiteNetLib.Utils;
 using Steam;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
+using static LiteNetLib.NetManager;
 
 namespace SCPSLBugPatch.Patches
 {
@@ -20,9 +22,9 @@ Total Remote Addresses Count (May Not the DDoS Source Address) =>> {2}↓
 {3}
 ===================================================================";
 
-        internal static long PacketCount = 0;
-        internal static long DataBytes = 0;
-        internal static HashSet<string> RemoteAddresses = new HashSet<string>();
+        internal static long PacketCount;
+        internal static long DataBytes;
+        internal static HashSet<string> RemoteAddresses;
         internal static void Initialize()
         {
             PacketCount = 0;
@@ -32,7 +34,7 @@ Total Remote Addresses Count (May Not the DDoS Source Address) =>> {2}↓
         internal static string GetBadDataInfo()
         {
             return string.Format(BadDataInfoFormat, PacketCount, BytesToString(DataBytes), RemoteAddresses.Count, string.Join("\r\n", RemoteAddresses));
-            string BytesToString(long byteCount)
+            static string BytesToString(long byteCount)
             {
                 string[] suf = { "B", "KB", "MB", "GB", "TB", "PB", "EB" }; //Longs run out around EB
                 if (byteCount == 0)
@@ -105,22 +107,86 @@ Total Remote Addresses Count (May Not the DDoS Source Address) =>> {2}↓
                     }
                 }
 
+                //if (!packet.Verify())
+                //{
+                //    if (packet.RawData.Length >= 5 && packet.RawData[4] == 84)
+                //    {
+                //        _ = __instance._udpSocketv4.SendTo(SteamServerInfo.Serialize(), SocketFlags.None, remoteEndPoint);
+                //        __instance.PoolRecycle(packet);
+                //    }
+                //    else
+                //    {
+                //        PacketCount++;
+                //        DataBytes += size;
+                //        _ = RemoteAddresses.Add(remoteEndPoint.Address.ToString());
+                //        //NetDebug.WriteError("[NM] DataReceived: bad!");
+                //        __instance.PoolRecycle(packet);
+                //    }
+
+                //    return false;
+                //}
+
                 if (!packet.Verify())
                 {
-                    if (packet.RawData.Length >= 5 && packet.RawData[4] == 84)
-                    {
-                        _ = __instance._udpSocketv4.SendTo(SteamServerInfo.Serialize(), SocketFlags.None, remoteEndPoint);
-                        __instance.PoolRecycle(packet);
-                    }
-                    else
+                    if (packet.RawData.Length < 5 || packet.RawData[4] != 84)
                     {
                         PacketCount++;
                         DataBytes += size;
                         _ = RemoteAddresses.Add(remoteEndPoint.Address.ToString());
                         //NetDebug.WriteError("[NM] DataReceived: bad!");
                         __instance.PoolRecycle(packet);
+                        return false;
                     }
 
+                    long num = Stopwatch.GetTimestamp() - 40000000;
+                    List<IPEndPoint> list = new List<IPEndPoint>();
+                    foreach (KeyValuePair<IPEndPoint, ChallengeInfo> challenge in __instance._challenges)
+                    {
+                        if (challenge.Value.Timestamp < num)
+                        {
+                            list.Add(challenge.Key);
+                        }
+                    }
+
+                    foreach (IPEndPoint item in list)
+                    {
+                        __instance._challenges.Remove(item);
+                    }
+
+                    if (__instance._challenges.TryGetValue(remoteEndPoint, out var value2))
+                    {
+                        int num2 = Array.IndexOf(packet.RawData, (byte)0) + 1;
+                        if (num2 != 0 && packet.RawData.Length >= num2 + 4 && BitConverter.ToUInt32(packet.RawData, num2) == value2.Challenge)
+                        {
+                            __instance._challenges.Remove(remoteEndPoint);
+                            __instance._udpSocketv4.SendTo(SteamServerInfo.Serialize(), SocketFlags.None, remoteEndPoint);
+                            __instance.PoolRecycle(packet);
+                        }
+                        else
+                        {
+                            //NetDebug.WriteError("[NM] DataReceived: bad! Expected Challenge was not received.");
+                            __instance.PoolRecycle(packet);
+                        }
+
+                        return false;
+                    }
+
+                    uint num3 = (uint)((Random)(object)__instance._random).Next();
+                    __instance._challenges[remoteEndPoint] = new ChallengeInfo
+                    {
+                        Challenge = num3,
+                        Timestamp = Stopwatch.GetTimestamp()
+                    };
+                    byte[] array2 = new byte[9];
+                    for (int i = 0; i < 4; i++)
+                    {
+                        array2[i] = byte.MaxValue;
+                    }
+
+                    array2[4] = 65;
+                    Buffer.BlockCopy(BitConverter.GetBytes(num3), 0, array2, 5, 4);
+                    __instance._udpSocketv4.SendTo(array2, SocketFlags.None, remoteEndPoint);
+                    __instance.PoolRecycle(packet);
                     return false;
                 }
 
@@ -158,12 +224,12 @@ Total Remote Addresses Count (May Not the DDoS Source Address) =>> {2}↓
                 }
 
                 __instance._peersLock.EnterReadLock();
-                bool flag = __instance._peersDict.TryGetValue(remoteEndPoint, out NetPeer value2);
+                bool flag = __instance._peersDict.TryGetValue(remoteEndPoint, out NetPeer value3);
                 __instance._peersLock.ExitReadLock();
                 if (flag && __instance.EnableStatistics)
                 {
-                    value2.Statistics.IncrementPacketsReceived();
-                    value2.Statistics.AddBytesReceived(size);
+                    value3.Statistics.IncrementPacketsReceived();
+                    value3.Statistics.AddBytesReceived(size);
                 }
 
                 switch (packet.Property)
@@ -173,7 +239,7 @@ Total Remote Addresses Count (May Not the DDoS Source Address) =>> {2}↓
                             NetConnectRequestPacket netConnectRequestPacket = NetConnectRequestPacket.FromData(packet);
                             if (netConnectRequestPacket != null)
                             {
-                                __instance.ProcessConnectRequest(remoteEndPoint, value2, netConnectRequestPacket);
+                                __instance.ProcessConnectRequest(remoteEndPoint, value3, netConnectRequestPacket);
                             }
 
                             break;
@@ -181,16 +247,16 @@ Total Remote Addresses Count (May Not the DDoS Source Address) =>> {2}↓
                     case PacketProperty.PeerNotFound:
                         if (flag)
                         {
-                            if (value2.ConnectionState == ConnectionState.Connected)
+                            if (value3.ConnectionState == ConnectionState.Connected)
                             {
                                 if (packet.Size == 1)
                                 {
-                                    value2.ResetMtu();
-                                    _ = __instance.SendRaw(NetConnectAcceptPacket.MakeNetworkChanged(value2), remoteEndPoint);
+                                    value3.ResetMtu();
+                                    _ = __instance.SendRaw(NetConnectAcceptPacket.MakeNetworkChanged(value3), remoteEndPoint);
                                 }
                                 else if (packet.Size == 2 && packet.RawData[1] == 1)
                                 {
-                                    __instance.DisconnectPeerForce(value2, DisconnectReason.PeerNotFound, SocketError.Success, null);
+                                    __instance.DisconnectPeerForce(value3, DisconnectReason.PeerNotFound, SocketError.Success, null);
                                 }
                             }
                         }
@@ -238,23 +304,23 @@ Total Remote Addresses Count (May Not the DDoS Source Address) =>> {2}↓
 
                         break;
                     case PacketProperty.InvalidProtocol:
-                        if (flag && value2.ConnectionState == ConnectionState.Outgoing)
+                        if (flag && value3.ConnectionState == ConnectionState.Outgoing)
                         {
-                            __instance.DisconnectPeerForce(value2, DisconnectReason.InvalidProtocol, SocketError.Success, null);
+                            __instance.DisconnectPeerForce(value3, DisconnectReason.InvalidProtocol, SocketError.Success, null);
                         }
 
                         break;
                     case PacketProperty.Disconnect:
                         if (flag)
                         {
-                            DisconnectResult disconnectResult = value2.ProcessDisconnect(packet);
+                            DisconnectResult disconnectResult = value3.ProcessDisconnect(packet);
                             if (disconnectResult == DisconnectResult.None)
                             {
                                 __instance.PoolRecycle(packet);
                                 break;
                             }
 
-                            __instance.DisconnectPeerForce(value2, (disconnectResult == DisconnectResult.Disconnect) ? DisconnectReason.RemoteConnectionClose : DisconnectReason.ConnectionRejected, SocketError.Success, packet);
+                            __instance.DisconnectPeerForce(value3, (disconnectResult == DisconnectResult.Disconnect) ? DisconnectReason.RemoteConnectionClose : DisconnectReason.ConnectionRejected, SocketError.Success, packet);
                         }
                         else
                         {
@@ -267,9 +333,9 @@ Total Remote Addresses Count (May Not the DDoS Source Address) =>> {2}↓
                         if (flag)
                         {
                             NetConnectAcceptPacket netConnectAcceptPacket2 = NetConnectAcceptPacket.FromData(packet);
-                            if (netConnectAcceptPacket2 != null && value2.ProcessConnectAccept(netConnectAcceptPacket2))
+                            if (netConnectAcceptPacket2 != null && value3.ProcessConnectAccept(netConnectAcceptPacket2))
                             {
-                                __instance.CreateEvent(NetEvent.EType.Connect, value2, null, SocketError.Success, 0, DisconnectReason.ConnectionFailed, null, DeliveryMethod.Unreliable, 0);
+                                __instance.CreateEvent(NetEvent.EType.Connect, value3, null, SocketError.Success, 0, DisconnectReason.ConnectionFailed, null, DeliveryMethod.Unreliable, 0);
                             }
                         }
 
@@ -277,7 +343,7 @@ Total Remote Addresses Count (May Not the DDoS Source Address) =>> {2}↓
                     default:
                         if (flag)
                         {
-                            value2.ProcessPacket(packet);
+                            value3.ProcessPacket(packet);
                         }
                         else
                         {

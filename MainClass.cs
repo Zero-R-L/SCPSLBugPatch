@@ -7,6 +7,7 @@ using MEC;
 using Scp914;
 using SCPSLBugPatch.Patches;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace SCPSLBugPatch
@@ -14,12 +15,12 @@ namespace SCPSLBugPatch
     internal class MainClass : Plugin
     {
         private const string PluginName = "SCPSLBugPatch";
-        private static string LogFilePath { get; set; }
-        private static CoroutineHandle CoroutineHandle { get; set; }
-        private static Harmony Harmony { get; } = new Harmony($"{PluginName}-{DateTime.Now.Ticks}");
+        private static string LogFilePath;
+        private static Harmony harmony;
+        private static HashSet<string>
         public override string Name => PluginName;
         public override string Author => "ZeroRL";
-        public override Version Version => new Version(1, 1, 0);
+        public override Version Version => new(1, 1, 1);
         public override string Description => PluginName;
         public override Version RequiredApiVersion => LabApiProperties.CurrentVersion;
         internal static void AddLog(string content)
@@ -32,12 +33,13 @@ namespace SCPSLBugPatch
             string folder = FileManager.GetAppFolder();
             LogFilePath = Path.Combine(folder, $"{PluginName}.log");
             BadDataLogSpamPatch.Initialize();
-            Harmony.PatchAll();
+            harmony = new($"{PluginName}-{DateTime.Now.Ticks}");
+            harmony.PatchAll();
             ServerEvents.RoundRestarted += OnRestartingRound;
         }
         public override void Disable()
         {
-            Harmony.UnpatchAll();
+            harmony.UnpatchAll(harmony.Id);
             ServerEvents.RoundRestarted -= OnRestartingRound;
         }
         private void OnRestartingRound()

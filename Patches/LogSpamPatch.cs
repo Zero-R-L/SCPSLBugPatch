@@ -22,10 +22,11 @@ namespace SCPSLBugPatch.Patches
                     NetworkWriter networkWriter = NetworkServer.SerializeForConnection(item, connection);
                     if (networkWriter != null)
                     {
-                        EntityStateMessage entityStateMessage = default(EntityStateMessage);
-                        entityStateMessage.netId = item.netId;
-                        entityStateMessage.payload = networkWriter.ToArraySegment();
-                        EntityStateMessage message = entityStateMessage;
+                        EntityStateMessage message = new()
+                        {
+                            netId = item.netId,
+                            payload = networkWriter.ToArraySegment()
+                        };
                         connection.Send(message);
                     }
                 }
